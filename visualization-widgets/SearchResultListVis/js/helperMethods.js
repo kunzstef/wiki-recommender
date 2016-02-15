@@ -232,7 +232,7 @@ function addGridWikiResultItems(msg) {
             + ' data-category="eexcess-image">' +
             '<div class="eexcess-title-other-with-preview-area eexcess-image itemTitle">' +
             '<div class="eexcess-title-other-with-preview-content itemTitle" ><div class="eexcess-title-content">' +
-            itemTitle + '</div></div></div><img src="' + val.imageinfo[0].url + '" />' + resultLinks + '</div>';
+            itemTitle + '</div></div></div><a class="fancybox" href="' + val.imageinfo[0].url + '" title="' + itemTitle + '" ><img src="' + val.imageinfo[0].url + '" /></a>' + resultLinks + '</div>';
 
         items += item;
     });
@@ -262,11 +262,25 @@ function addCitationInserting() {
     });
 }
 
+function initFancyBoxPreview() {
+    $('.fancybox').fancybox({
+        openEffect	: 'elastic',
+        closeEffect	: 'elastic',
+
+        helpers : {
+            title : {
+                type : 'inside'
+            }
+        }
+    });
+}
+
 //-----Interface, shorten Titles, assemble Buttons, Filters, LoadingBar, Errors etc.-----//
 function manageInterface() {
     $(addFilterCounter);
     $(bindDescriptionHover);
     $(addCitationInserting);
+    $(initFancyBoxPreview);
 
     $('.eexcess-title-other-with-preview-content').dotdotdot();
     $('.eexcess-title-with-description-text').dotdotdot();
