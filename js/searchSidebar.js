@@ -40,7 +40,7 @@ require(['c4/iframes'], function (iframes) {
                 var sidebarWidth = $("#searchform").width();
 
                 $("#searchform").onPositionChanged(function () {
-                    var editor = $("#mw-content-text");
+                    var editor = $("#content");
 
                     var sidebarWidth = $("#searchform").width();
                     //editor.css("width", editor.width() - sidebarWidth);
@@ -51,6 +51,7 @@ require(['c4/iframes'], function (iframes) {
                         "width": sidebarWidth,
                         "top": sidebarTop.top,
                         "margin-top": $("#p-search").css("margin-top"),
+                        "margin-bottom": $("#footer").css("height")+($("#footer").css("padding-top")+$("#footer").css("padding-bottom")).toPx(),
                         "margin-right": $("#p-search").css("margin-right")
 
                     });
@@ -107,11 +108,12 @@ require(['c4/iframes'], function (iframes) {
 
             //adjust sidebar position and size according to the wiki editor
             sidebar.css({
-                "height": $("#mw-content-text").height(),
+                "height": $("#content").height(),
                 "width": sidebarWidth,
                 "top": sidebarTop.top,
                 "margin-top": $("#p-search").css("margin-top"),
-                "margin-right": $("#p-search").css("margin-right")
+                "margin-right": $("#p-search").css("margin-right"),
+                "margin-bottom": $("#footer").css("height")+($("#footer").css("padding-top")+$("#footer").css("padding-bottom"))
             });
 
             sidebar.css("top", sidebarTop.top);
@@ -244,5 +246,26 @@ require(['c4/iframes'], function (iframes) {
 });
 
 
+toEm = function(settings){
+    settings = jQuery.extend({
+        scope: 'body'
+    }, settings);
+    var that = parseInt(this[0],10),
+        scopeTest = jQuery('<div style="display: none; font-size: 1em; margin: 0; padding:0; height: auto; line-height: 1; border:0;">&nbsp;</div>').appendTo(settings.scope),
+        scopeVal = scopeTest.height();
+    scopeTest.remove();
+    return (that / scopeVal).toFixed(8) + 'em';
+};
 
+
+toPx = function(settings){
+    settings = jQuery.extend({
+        scope: 'body'
+    }, settings);
+    var that = parseFloat(this[0]),
+        scopeTest = jQuery('<div style="display: none; font-size: 1em; margin: 0; padding:0; height: auto; line-height: 1; border:0;">&nbsp;</div>').appendTo(settings.scope),
+        scopeVal = scopeTest.height();
+    scopeTest.remove();
+    return Math.round(that * scopeVal) + 'px';
+};
 
