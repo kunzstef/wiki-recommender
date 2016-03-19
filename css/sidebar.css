@@ -4,15 +4,15 @@ particular page */
 
 #eexcess_sidebar {
     /*display:none;*/
-    position: absolute;
+    position: fixed;
     top: 0px;
     margin: 0;
-    padding: 0;
+    padding: 5px;
     right: 0px;
-    width: 18%;
+    width: 240px; /*two tiles wide */
     height: 100%;
-    border: 0px;
-    z-index: 999;
+    border: 1px;
+    /*z-index: 999;*/
     background-color: white;
     font-size: 11pt;
 }

@@ -31,12 +31,25 @@ require(['c4/iframes'], function (iframes) {
 
                     //remove sidebar
                     if (request.data == false) {
-                        editor = $("#mw-content-text");
-                        editor.css("width", editor.width() + sidebarWidth);
+                        var sidebarWidth = $("#eexcess_sidebar").width();
+                        console.log(sidebarWidth)
+                        var wikiMwContentText = $("#mw-content-text");
+                        var wikiContent = $("#content");
+                        var wikiHeader = $("#mw-head");
+
+                        wikiMwContentText.css("width", wikiMwContentText.width() + sidebarWidth);
+                        wikiContent.css("width", wikiContent.width() + sidebarWidth);
+                        wikiHeader.css("right", 0);
+
                         $("#eexcess_sidebar").remove();
                     }
                 });
             }
+
+            //
+            //$(window).resize(function() {
+            //
+            //});
 
             /*listens to position changes of the editor's content and adjusts sidebar accordingly (relevant when there's
              some kind of announcement at the top of the wiki page) the listener is registered only when browser
@@ -68,7 +81,7 @@ require(['c4/iframes'], function (iframes) {
 
                 return o;
             };
-            sidebarWidth = $("#searchform").width();
+            sidebarWidth = $("#eexcess_sidebar").width();
 
             $("#searchform").onPositionChanged(function () {
 
@@ -77,24 +90,31 @@ require(['c4/iframes'], function (iframes) {
                 $("#eexcess_sidebar").css(assembleSidebarCss());
             });
 
+
+            $(window).resize(function() {
+                $("#eexcess_sidebar").css(assembleSidebarCss());
+            });
+
         });
 
 
     function assembleSidebarCss() {
-        var editor = $("#mw-content-text");
-        var sidebarWidth = $("#searchform").width();
-        var sidebarTop = editor.offset();
+        var wikiMwContentText = $("#mw-content-text");
+        //var sidebarWidth = $("#searchform").width();
+        //var sidebarTop = editor.offset();
 
         //editor.css("width", editor.width() - sidebarWidth);
         //editor = $("#content");
 
         var eexcess_sidebar_css = {
-            "height": editor.height(),
-            "width": sidebarWidth,
-            "top": sidebarTop.top,
-            "margin-top": $("#p-search").css("margin-top"),
+            "height": $(window).height(),
+            //"width": sidebarWidth,
+            //"top": sidebarTop.top,
+            //"margin-top": $("#p-search").css("margin-top"),
             //"margin-bottom": $("#footer").css("height") + ($("#footer").css("padding-top") + $("#footer").css("padding-bottom")).toPx(),
-            "margin-right": $("#p-search").css("margin-right")
+            "margin-right": "2px",
+            "position": "fixed",
+            "padding": "5px"
         };
 
         return eexcess_sidebar_css;
@@ -104,20 +124,31 @@ require(['c4/iframes'], function (iframes) {
         //check if relevant ui elements exist
         if ($(".wikiEditor-ui")[0] && $("#editform")[0]) {
 
-            var sidebarWidth = $("#searchform").width();
-            var editor = $("#mw-content-text");
-            editor.css("width", editor.width() - sidebarWidth);
             var iframeUrl = chrome.extension.getURL('visualization-widgets/SearchResultListVis/index.html');
-
-            $("<div id='eexcess_sidebar'><iframe src='" + iframeUrl + "' /></div>").insertAfter($("#bodyContent")).hide();
+            $("#mw-content-text").append($("<div id='eexcess_sidebar'><iframe src='" + iframeUrl + "' /></div>").hide());
 
             var sidebar = $("#eexcess_sidebar");
+            //there are 3 wikipedia ui elements whose sizes have to change when the sidebar appears:
+            // mw-content-text, content and mw-head. they won't change their size when the body as a whole is
+            // selected
+            var sidebarWidth = $("#eexcess_sidebar").width();
+            var wikiMwContentText = $("#mw-content-text");
+            var wikiContent = $("#content");
+            var wikiHeader = $("#mw-head");
+
+            //reduce width of wiki elements
+            wikiMwContentText.css("width", wikiMwContentText.width() - sidebarWidth);
+            wikiContent.css("width", wikiContent.width() - sidebarWidth);
+            wikiHeader.css("right", sidebarWidth);
+
+
 
             //adjust sidebar position and size according to the wiki editor
-            $("#eexcess_sidebar").css(assembleSidebarCss());
+            sidebar.css(assembleSidebarCss());
 
             //sidebar.show();
             sidebar.slideToggle({direction: "left"});
+            //sidebar.animate({width: "200"});
         } else {
             setTimeout(addSidebar, 10);
         }
