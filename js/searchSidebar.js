@@ -3,6 +3,8 @@ require(['c4/iframes'], function (iframes) {
     var prevWindowW;
     var prevWindowH;
 
+    var wikiLeftNavigationMargin;
+
     var wikiMwContentTextW;
     var wikiContentW;
     var wikiHeaderW;
@@ -17,6 +19,7 @@ require(['c4/iframes'], function (iframes) {
                 //adding the sidebar
                 $(document).ready(function () {
                     if (request.data == true) {
+                        wikiLeftNavigationMargin = $("#left-navigation").css("margin-left");
                         //add sidebar
                         addSidebar();
 
@@ -90,18 +93,25 @@ require(['c4/iframes'], function (iframes) {
         var wikiMwContentText = $("#mw-content-text");
         var wikiContent = $("#content");
         var wikiHeader = $("#mw-head");
+        var wikiLeftNavigation = $("#left-navigation");
+
 
         if (increase) {
             wikiMwContentText.css("width", "90%");
             wikiContent.css("width", "90%");
             wikiHeader.css("right", 0);
+            wikiLeftNavigation.css("float", "left");
+            wikiLeftNavigation.css("margin-left", wikiLeftNavigationMargin);
+            wikiLeftNavigation.css("padding-right", "0");
+
         } else {
             //reduce width of wiki elements
             wikiMwContentText.css("width", "84%");
             wikiContent.css("width", "84%");
             wikiHeader.css("right", "15%");
-
-
+            wikiLeftNavigation.css("float", "right")
+            wikiLeftNavigation.css("margin-left", "0");
+            wikiLeftNavigation.css("padding-right", "12px");
         }
     }
 
