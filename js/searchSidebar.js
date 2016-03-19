@@ -1,5 +1,11 @@
 require(['c4/iframes'], function (iframes) {
 
+    var prevWindowW;
+    var prevWindowH;
+
+    var wikiMwContentTextW;
+    var wikiContentW;
+    var wikiHeaderW;
 
 
 //listens to messages from background.js regarding its visibility. if it is visible, it listens to events like
@@ -13,6 +19,10 @@ require(['c4/iframes'], function (iframes) {
                     if (request.data == true) {
                         //add sidebar
                         addSidebar();
+
+
+                        prevWindowW = $(window).width();
+                        prevWindowH = $(window).height();
 
                         //window.addEventListener('message', newTrigger);
                         window.onmessage = function (msg) {
@@ -31,87 +41,39 @@ require(['c4/iframes'], function (iframes) {
 
                     //remove sidebar
                     if (request.data == false) {
-                        var sidebarWidth = $("#eexcess_sidebar").width();
-                        console.log(sidebarWidth)
-                        var wikiMwContentText = $("#mw-content-text");
-                        var wikiContent = $("#content");
-                        var wikiHeader = $("#mw-head");
-
-                        wikiMwContentText.css("width", wikiMwContentText.width() + sidebarWidth);
-                        wikiContent.css("width", wikiContent.width() + sidebarWidth);
-                        wikiHeader.css("right", 0);
+                        adaptWikiElements(true);
 
                         $("#eexcess_sidebar").remove();
                     }
                 });
             }
 
-            //
-            //$(window).resize(function() {
+            //var id;
+            //$(window).resize(function () {
+            //    console.log("resize")
+            //    clearTimeout(id);
+            //    id = setTimeout(doneResizing, 500);
             //
             //});
-
-            /*listens to position changes of the editor's content and adjusts sidebar accordingly (relevant when there's
-             some kind of announcement at the top of the wiki page) the listener is registered only when browser
-             action is active because only then there's a sidebar to adjust and it can be guaranteed that only the current tab's sidebar is altered*/
-            jQuery.fn.onPositionChanged = function (trigger, millis) {
-                if (millis == null) millis = 100;
-                var o = $(this[0]); // our jquery object
-                if (o.length < 1) return o;
-
-                var lastPos = null;
-                var lastOff = null;
-                setInterval(function () {
-                    if (o == null || o.length < 1) return o; // abort if element is non existent any more
-                    if (lastPos == null) lastPos = o.position();
-                    if (lastOff == null) lastOff = o.offset();
-                    var newPos = o.position();
-                    var newOff = o.offset();
-                    if (lastPos.top != newPos.top || lastPos.left != newPos.left) {
-                        $(this).trigger('onPositionChanged', {lastPos: lastPos, newPos: newPos});
-                        if (typeof (trigger) == "function") trigger(lastPos, newPos);
-                        lastPos = o.position();
-                    }
-                    if (lastOff.top != newOff.top || lastOff.left != newOff.left) {
-                        $(this).trigger('onOffsetChanged', {lastOff: lastOff, newOff: newOff});
-                        if (typeof (trigger) == "function") trigger(lastOff, newOff);
-                        lastOff = o.offset();
-                    }
-                }, millis);
-
-                return o;
-            };
-            sidebarWidth = $("#eexcess_sidebar").width();
-
-            $("#searchform").onPositionChanged(function () {
-
-                console.log("pos changed");
-
-                $("#eexcess_sidebar").css(assembleSidebarCss());
-            });
-
-
-            $(window).resize(function() {
-                $("#eexcess_sidebar").css(assembleSidebarCss());
-            });
+            //
+            //function doneResizing() {
+            //    if (prevWindowW > $(window).width()) {
+            //        //$("#eexcess_sidebar").css(assembleSidebarCss());
+            //        adaptWikiElements(false);
+            //
+            //    } else {
+            //        adaptWikiElements(true);
+            //        //adaptWikiElements(false);
+            //    }
+            //
+            //};
 
         });
 
 
     function assembleSidebarCss() {
-        var wikiMwContentText = $("#mw-content-text");
-        //var sidebarWidth = $("#searchform").width();
-        //var sidebarTop = editor.offset();
-
-        //editor.css("width", editor.width() - sidebarWidth);
-        //editor = $("#content");
-
         var eexcess_sidebar_css = {
             "height": $(window).height(),
-            //"width": sidebarWidth,
-            //"top": sidebarTop.top,
-            //"margin-top": $("#p-search").css("margin-top"),
-            //"margin-bottom": $("#footer").css("height") + ($("#footer").css("padding-top") + $("#footer").css("padding-bottom")).toPx(),
             "margin-right": "2px",
             "position": "fixed",
             "padding": "5px"
@@ -120,27 +82,42 @@ require(['c4/iframes'], function (iframes) {
         return eexcess_sidebar_css;
     }
 
+    function adaptWikiElements(increase) {
+        var sidebarWidth = $("#eexcess_sidebar").width();
+        //there are 3 wikipedia ui elements whose sizes have to change when the sidebar appears:
+        // mw-content-text, content and mw-head. they won't change their size when the body as a whole is
+        // selected
+        var wikiMwContentText = $("#mw-content-text");
+        var wikiContent = $("#content");
+        var wikiHeader = $("#mw-head");
+
+        if (increase) {
+            wikiMwContentText.css("width", "90%");
+            wikiContent.css("width", "90%");
+            wikiHeader.css("right", 0);
+        } else {
+            //reduce width of wiki elements
+            wikiMwContentText.css("width", "84%");
+            wikiContent.css("width", "84%");
+            wikiHeader.css("right", "15%");
+
+
+        }
+    }
+
+
     function addSidebar() {
         //check if relevant ui elements exist
         if ($(".wikiEditor-ui")[0] && $("#editform")[0]) {
+
+            //$('body').wrapInner('<div id="eexcess_wiki_body" />');
+            //$("#eexcess_wiki_body").css("width","80%")
 
             var iframeUrl = chrome.extension.getURL('visualization-widgets/SearchResultListVis/index.html');
             $("#mw-content-text").append($("<div id='eexcess_sidebar'><iframe src='" + iframeUrl + "' /></div>").hide());
 
             var sidebar = $("#eexcess_sidebar");
-            //there are 3 wikipedia ui elements whose sizes have to change when the sidebar appears:
-            // mw-content-text, content and mw-head. they won't change their size when the body as a whole is
-            // selected
-            var sidebarWidth = $("#eexcess_sidebar").width();
-            var wikiMwContentText = $("#mw-content-text");
-            var wikiContent = $("#content");
-            var wikiHeader = $("#mw-head");
-
-            //reduce width of wiki elements
-            wikiMwContentText.css("width", wikiMwContentText.width() - sidebarWidth);
-            wikiContent.css("width", wikiContent.width() - sidebarWidth);
-            wikiHeader.css("right", sidebarWidth);
-
+            adaptWikiElements(false);
 
 
             //adjust sidebar position and size according to the wiki editor
@@ -276,4 +253,37 @@ require(['c4/iframes'], function (iframes) {
 });
 
 
-
+///*listens to position changes of the editor's content and adjusts sidebar accordingly (relevant when there's
+// some kind of announcement at the top of the wiki page) the listener is registered only when browser
+// action is active because only then there's a sidebar to adjust and it can be guaranteed that only the current tab's sidebar is altered*/
+//jQuery.fn.onPositionChanged = function (trigger, millis) {
+//    if (millis == null) millis = 100;
+//    var o = $(this[0]); // our jquery object
+//    if (o.length < 1) return o;
+//
+//    var lastPos = null;
+//    var lastOff = null;
+//    setInterval(function () {
+//        if (o == null || o.length < 1) return o; // abort if element is non existent any more
+//        if (lastPos == null) lastPos = o.position();
+//        if (lastOff == null) lastOff = o.offset();
+//        var newPos = o.position();
+//        var newOff = o.offset();
+//        if (lastPos.top != newPos.top || lastPos.left != newPos.left) {
+//            $(this).trigger('onPositionChanged', {lastPos: lastPos, newPos: newPos});
+//            if (typeof (trigger) == "function") trigger(lastPos, newPos);
+//            lastPos = o.position();
+//        }
+//        if (lastOff.top != newOff.top || lastOff.left != newOff.left) {
+//            $(this).trigger('onOffsetChanged', {lastOff: lastOff, newOff: newOff});
+//            if (typeof (trigger) == "function") trigger(lastOff, newOff);
+//            lastOff = o.offset();
+//        }
+//    }, millis);
+//
+//    return o;
+//};
+//$("#searchform").onPositionChanged(function () {
+//    adaptWikiElements(false);
+//    $("#eexcess_sidebar").css(assembleSidebarCss());
+//});
