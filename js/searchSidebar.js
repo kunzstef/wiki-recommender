@@ -1,61 +1,12 @@
 require(['c4/iframes'], function (iframes) {
 
+
+
 //listens to messages from background.js regarding its visibility. if it is visible, it listens to events like
 // triggeredQuerys or newResults from its iFrame
     chrome.runtime.onMessage.addListener(
         function (request, sender, sendResponse) {
             if (request.method == "visibility") {
-
-                /*listens to position changes of the editor's content and adjusts sidebar accordingly (relevant when there's
-                 some kind of announcement at the top of the wiki page
-                 the listener is registered only when browser action is active because inly then there's a sidebar to
-                 adjust and it can be guaranteed that only the current tab's sidebar is altered*/
-                jQuery.fn.onPositionChanged = function (trigger, millis) {
-                    if (millis == null) millis = 100;
-                    var o = $(this[0]); // our jquery object
-                    if (o.length < 1) return o;
-
-                    var lastPos = null;
-                    var lastOff = null;
-                    setInterval(function () {
-                        if (o == null || o.length < 1) return o; // abort if element is non existend eny more
-                        if (lastPos == null) lastPos = o.position();
-                        if (lastOff == null) lastOff = o.offset();
-                        var newPos = o.position();
-                        var newOff = o.offset();
-                        if (lastPos.top != newPos.top || lastPos.left != newPos.left) {
-                            $(this).trigger('onPositionChanged', {lastPos: lastPos, newPos: newPos});
-                            if (typeof (trigger) == "function") trigger(lastPos, newPos);
-                            lastPos = o.position();
-                        }
-                        if (lastOff.top != newOff.top || lastOff.left != newOff.left) {
-                            $(this).trigger('onOffsetChanged', {lastOff: lastOff, newOff: newOff});
-                            if (typeof (trigger) == "function") trigger(lastOff, newOff);
-                            lastOff = o.offset();
-                        }
-                    }, millis);
-
-                    return o;
-                };
-                var sidebarWidth = $("#searchform").width();
-
-                $("#searchform").onPositionChanged(function () {
-                    var editor = $("#content");
-
-                    var sidebarWidth = $("#searchform").width();
-                    //editor.css("width", editor.width() - sidebarWidth);
-                    var sidebarTop = editor.offset();
-                    console.log("pos changed")
-                    $("#eexcess_sidebar").css({
-                        "height": editor.height(),
-                        "width": sidebarWidth,
-                        "top": sidebarTop.top,
-                        "margin-top": $("#p-search").css("margin-top"),
-                        "margin-bottom": $("#footer").css("height")+($("#footer").css("padding-top")+$("#footer").css("padding-bottom")).toPx(),
-                        "margin-right": $("#p-search").css("margin-right")
-
-                    });
-                });
 
                 //adding the sidebar
                 $(document).ready(function () {
@@ -67,15 +18,12 @@ require(['c4/iframes'], function (iframes) {
                         window.onmessage = function (msg) {
                             if (msg.data.event && msg.data.event === 'eexcess.queryTriggered') {
                                 var contextKeywords;
-
                                 var module = msg.data.data.module;
-
                                 if (module === 'passive-search') {
                                     contextKeywords = msg.data.data.contextKeywords;
                                 } else {
                                     contextKeywords = [{text: msg.data.data}];
                                 }
-
                                 handleSearch(contextKeywords, module);
                             }
                         }
@@ -83,22 +31,81 @@ require(['c4/iframes'], function (iframes) {
 
                     //remove sidebar
                     if (request.data == false) {
-                        var editor = $("#mw-content-text");
+                        editor = $("#mw-content-text");
                         editor.css("width", editor.width() + sidebarWidth);
                         $("#eexcess_sidebar").remove();
                     }
                 });
             }
+
+            /*listens to position changes of the editor's content and adjusts sidebar accordingly (relevant when there's
+             some kind of announcement at the top of the wiki page) the listener is registered only when browser
+             action is active because only then there's a sidebar to adjust and it can be guaranteed that only the current tab's sidebar is altered*/
+            jQuery.fn.onPositionChanged = function (trigger, millis) {
+                if (millis == null) millis = 100;
+                var o = $(this[0]); // our jquery object
+                if (o.length < 1) return o;
+
+                var lastPos = null;
+                var lastOff = null;
+                setInterval(function () {
+                    if (o == null || o.length < 1) return o; // abort if element is non existent any more
+                    if (lastPos == null) lastPos = o.position();
+                    if (lastOff == null) lastOff = o.offset();
+                    var newPos = o.position();
+                    var newOff = o.offset();
+                    if (lastPos.top != newPos.top || lastPos.left != newPos.left) {
+                        $(this).trigger('onPositionChanged', {lastPos: lastPos, newPos: newPos});
+                        if (typeof (trigger) == "function") trigger(lastPos, newPos);
+                        lastPos = o.position();
+                    }
+                    if (lastOff.top != newOff.top || lastOff.left != newOff.left) {
+                        $(this).trigger('onOffsetChanged', {lastOff: lastOff, newOff: newOff});
+                        if (typeof (trigger) == "function") trigger(lastOff, newOff);
+                        lastOff = o.offset();
+                    }
+                }, millis);
+
+                return o;
+            };
+            sidebarWidth = $("#searchform").width();
+
+            $("#searchform").onPositionChanged(function () {
+
+                console.log("pos changed");
+
+                $("#eexcess_sidebar").css(assembleSidebarCss());
+            });
+
         });
 
+
+    function assembleSidebarCss() {
+        var editor = $("#mw-content-text");
+        var sidebarWidth = $("#searchform").width();
+        var sidebarTop = editor.offset();
+
+        //editor.css("width", editor.width() - sidebarWidth);
+        //editor = $("#content");
+
+        var eexcess_sidebar_css = {
+            "height": editor.height(),
+            "width": sidebarWidth,
+            "top": sidebarTop.top,
+            "margin-top": $("#p-search").css("margin-top"),
+            //"margin-bottom": $("#footer").css("height") + ($("#footer").css("padding-top") + $("#footer").css("padding-bottom")).toPx(),
+            "margin-right": $("#p-search").css("margin-right")
+        };
+
+        return eexcess_sidebar_css;
+    }
 
     function addSidebar() {
         //check if relevant ui elements exist
         if ($(".wikiEditor-ui")[0] && $("#editform")[0]) {
-            var editor = $("#mw-content-text");
-            var sidebarWidth = $("#searchform").width();
 
-            var sidebarTop = editor.offset();
+            var sidebarWidth = $("#searchform").width();
+            var editor = $("#mw-content-text");
             editor.css("width", editor.width() - sidebarWidth);
             var iframeUrl = chrome.extension.getURL('visualization-widgets/SearchResultListVis/index.html');
 
@@ -107,16 +114,8 @@ require(['c4/iframes'], function (iframes) {
             var sidebar = $("#eexcess_sidebar");
 
             //adjust sidebar position and size according to the wiki editor
-            sidebar.css({
-                "height": $("#content").height(),
-                "width": sidebarWidth,
-                "top": sidebarTop.top,
-                "margin-top": $("#p-search").css("margin-top"),
-                "margin-right": $("#p-search").css("margin-right"),
-                "margin-bottom": $("#footer").css("height")+($("#footer").css("padding-top")+$("#footer").css("padding-bottom"))
-            });
+            $("#eexcess_sidebar").css(assembleSidebarCss());
 
-            sidebar.css("top", sidebarTop.top);
             //sidebar.show();
             sidebar.slideToggle({direction: "left"});
         } else {
@@ -246,26 +245,4 @@ require(['c4/iframes'], function (iframes) {
 });
 
 
-toEm = function(settings){
-    settings = jQuery.extend({
-        scope: 'body'
-    }, settings);
-    var that = parseInt(this[0],10),
-        scopeTest = jQuery('<div style="display: none; font-size: 1em; margin: 0; padding:0; height: auto; line-height: 1; border:0;">&nbsp;</div>').appendTo(settings.scope),
-        scopeVal = scopeTest.height();
-    scopeTest.remove();
-    return (that / scopeVal).toFixed(8) + 'em';
-};
-
-
-toPx = function(settings){
-    settings = jQuery.extend({
-        scope: 'body'
-    }, settings);
-    var that = parseFloat(this[0]),
-        scopeTest = jQuery('<div style="display: none; font-size: 1em; margin: 0; padding:0; height: auto; line-height: 1; border:0;">&nbsp;</div>').appendTo(settings.scope),
-        scopeVal = scopeTest.height();
-    scopeTest.remove();
-    return Math.round(that * scopeVal) + 'px';
-};
 
