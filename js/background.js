@@ -250,7 +250,6 @@ function queryCommons(data, callback) {
         success: function (response) {
             if (typeof callback !== 'undefined') {
                 callback({status: 'success', data: response});
-                console.log(response)
             }
         }
 
