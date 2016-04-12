@@ -1,5 +1,5 @@
-var currentFilter;
 var language;
+var executed = false;
 
 window.addEventListener('message', function (msg) {
     if (msg.data.event == 'eexcess.detectLang.response') {
@@ -134,24 +134,24 @@ function addGridEEXCESSResultItems(msg) {
 
             // add "isotoped" items
             /*if (mediaType == "IMAGE" || mediaType == "image") {
-                if (previewImage == undefined) {
+             if (previewImage == undefined) {
 
-                    //previewImage = "http://eexcess-dev.joanneum.at/eexcess-federated-recommender-web-service-1.0-SNAPSHOT/recommender/getPreviewImage?type=image";
-                    item = '<div class ="eexcess-isotope-grid-item eexcess-image eexcess-other-without-preview"'
-                        + documentBadge + itemDate + generatingQuery + ' data-category="eexcess-image">' +
-                        ' <div class="eexcess-title eexcess-image itemTitle"><div class="eexcess-title-content">' +
-                        itemTitle + '</div></div>' + resultLinks + '</div>';
-                } else {
+             //previewImage = "http://eexcess-dev.joanneum.at/eexcess-federated-recommender-web-service-1.0-SNAPSHOT/recommender/getPreviewImage?type=image";
+             item = '<div class ="eexcess-isotope-grid-item eexcess-image eexcess-other-without-preview"'
+             + documentBadge + itemDate + generatingQuery + ' data-category="eexcess-image">' +
+             ' <div class="eexcess-title eexcess-image itemTitle"><div class="eexcess-title-content">' +
+             itemTitle + '</div></div>' + resultLinks + '</div>';
+             } else {
 
-                    item = '<div class ="eexcess-isotope-grid-item eexcess-image eexcess-other-with-preview"'
-                        + documentBadge + itemDate + generatingQuery + ' data-category="eexcess-image">'
-                        + ' <div class="eexcess-title-other-with-preview-area eexcess-image itemTitle"> ' +
-                        '<div class="eexcess-title-other-with-preview-content itemTitle" ><div class="eexcess-title-content">' +
-                        itemTitle + '</div></div></div><img src="' + previewImage + '" />' + resultLinks + '</div>';
-                }
-                items += item;
-            }
-            else */
+             item = '<div class ="eexcess-isotope-grid-item eexcess-image eexcess-other-with-preview"'
+             + documentBadge + itemDate + generatingQuery + ' data-category="eexcess-image">'
+             + ' <div class="eexcess-title-other-with-preview-area eexcess-image itemTitle"> ' +
+             '<div class="eexcess-title-other-with-preview-content itemTitle" ><div class="eexcess-title-content">' +
+             itemTitle + '</div></div></div><img src="' + previewImage + '" />' + resultLinks + '</div>';
+             }
+             items += item;
+             }
+             else */
             if (mediaType.toLowerCase() == "text") {
 
                 //text results without description
@@ -293,9 +293,12 @@ function showLoadingBar() {
     $('#eexcess-isotope-filtering-and-sorting').hide();
     $('#eexcess-isotope-filters').each(function (i, buttonGroup) {
         var $buttonGroup = $(buttonGroup);
-        currentFilter = $buttonGroup.find('.is-checked').attr("class");
+        var currentFilter = $buttonGroup.find('.is-checked').attr("class");
+        chrome.storage.sync.set({'currentFilter': currentFilter}, function () {
+        });
     });
 
+    executed = false;
     $("#eexcess-isotope-filters").empty();
     $('.eexcess_error').hide();
     $('.eexcess_error_timeout').hide();
@@ -352,53 +355,63 @@ $(document).ready(function () {
 
 
 });
-
+//TODO called twice, why? and adjust "var executed" accordingly
 function addFilterCounter() {
 
-//TODO generalize
-    var buttonGroup = $("#eexcess-isotope-filters");
-    buttonGroup.empty();
+    if (!executed) {
+        var buttonGroup = $("#eexcess-isotope-filters");
+        buttonGroup.empty();
+        var current;
+        chrome.storage.sync.get(['currentFilter'], function (result) {
+            if (result.currentFilter) {
+                current = result.currentFilter;
+            }
 
-    //if no filter was selected, show all will be selected
-    if (currentFilter == undefined) {
-        buttonGroup.append(' <button class="eexcess-isotope-button show-all is-checked" data-filter="*">all' +
-            ' </button>');
-    } else {
-        buttonGroup.append(' <button class="eexcess-isotope-button show-all " data-filter="*">all </button>');
+            //if no filter was selected "show all" will be selected
+            if (current == undefined || current.indexOf("show-all") > -1) {
+                buttonGroup.append(' <button class="eexcess-isotope-button show-all is-checked" data-filter="*">all' +
+                    ' </button>');
+            } else {
+                buttonGroup.append(' <button class="eexcess-isotope-button show-all " data-filter="*">all </button>');
+            }
+
+
+            var numberOfImages = $('.eexcess-isotope-grid-item.eexcess-image').size();
+            var numberOfTexts = $('.eexcess-isotope-grid-item.eexcess-text').size();
+
+            if (numberOfImages > 0) {
+                var imageFilterButton = '<button class="eexcess-isotope-button eexcess-image"' +
+                    ' data-filter=".eexcess-image">images (' + numberOfImages + ')</button>';
+                buttonGroup.append(imageFilterButton);
+                if (current != undefined && current.indexOf("eexcess-image") > -1) {
+                    $('.eexcess-isotope-button.eexcess-image').addClass('is-checked');
+                    $('.eexcess-isotope-grid').isotope({filter: '.eexcess-image'});
+                }
+            }
+
+            if (numberOfTexts > 0) {
+                var textFilterButton = '<button class="eexcess-isotope-button eexcess-text"' +
+                    ' data-filter=".eexcess-text">texts (' + numberOfTexts + ')</button>';
+                buttonGroup.append(textFilterButton);
+                if (current != undefined && current.indexOf("eexcess-text") > -1) {
+                    $('.eexcess-isotope-button.eexcess-text').addClass('is-checked');
+                    $('.eexcess-isotope-grid').isotope({filter: '.eexcess-text'});
+                }
+            }
+
+            // if previous selected filter doesn't have any new results select "show-all"
+            if (current != undefined) {
+                if ((numberOfImages == 0 && current.indexOf("eexcess-image") > -1)
+                    || (numberOfTexts == 0 && current.indexOf("eexcess-text") > -1)) {
+                    $(".show-all").addClass("is-checked");
+                    $('.eexcess-isotope-grid').isotope({filter: '*'});
+                }
+            }
+
+        });
+        executed = true;
+        $('#eexcess-isotope-filtering-and-sorting').show();
     }
-
-
-    var numberOfImages = $('.eexcess-isotope-grid-item.eexcess-image').size();
-    var numberOfTexts = $('.eexcess-isotope-grid-item.eexcess-text').size();
-
-    if (numberOfImages > 0) {
-        var imageFilterButton = '<button class="eexcess-isotope-button eexcess-image"' +
-            ' data-filter=".eexcess-image">images (' + numberOfImages + ')</button>';
-        buttonGroup.append(imageFilterButton);
-        if (currentFilter != undefined && currentFilter.indexOf("eexcess-image") > -1) {
-            $('.eexcess-isotope-button.eexcess-image').addClass('is-checked');
-        }
-    }
-
-    if (numberOfTexts > 0) {
-        var textFilterButton = '<button class="eexcess-isotope-button eexcess-text"' +
-            ' data-filter=".eexcess-text">texts (' + numberOfTexts + ')</button>';
-        buttonGroup.append(textFilterButton);
-        if (currentFilter != undefined && currentFilter.indexOf("eexcess-text") > -1) {
-            $('.eexcess-isotope-button.eexcess-text').addClass('is-checked');
-        }
-    }
-
-    // if previous selected filter doesn't have any new results select "show-all"
-    if (currentFilter != undefined) {
-        if ((numberOfImages == 0 && currentFilter.indexOf("eexcess-image") > -1)
-            || (numberOfTexts == 0 && currentFilter.indexOf("eexcess-text") > -1)) {
-            $(".show-all").addClass("is-checked");
-            $('.eexcess-isotope-grid').isotope({filter: '*'});
-        }
-    }
-    $('#eexcess-isotope-filtering-and-sorting').show();
-
 }
 
 
